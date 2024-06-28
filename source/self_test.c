@@ -1,18 +1,8 @@
 /******************************************************************************
-* File Name:   main.c
+* File Name:   self_test.c
 *
-* Description:This file provides the following core peripheral self tests
-*             for  PSoC6 MCU and XMC7000 MCU:
-*             - CPU registers test
-*             - Program Counter test
-*             - WDT test
-*             - Clock test
-*             - Interrupt test
-*             - IO test
-*             - Flash test (fletcher's test + CRC test)
-*             - Config Registers test
-*             - SRAM/Stack test (March test)
-*             - Stack Overflow test
+* Description:This file provides the helper functions for executing self tests
+*             for  PSoC6 MCU and XMC7000 MCU.
 *
 *
 * Related Document: See README.md
@@ -55,188 +45,36 @@
 #include "cybsp.h"
 #include "cy_retarget_io.h"
 
-#include "SelfTest_Clock.h"
-#include "SelfTest_WDT.h"
-#include "SelfTest_CPU.h"
-#include "SelfTest_Interrupt.h"
-#include "SelfTest_Flash.h"
-#include "SelfTest_RAM.h"
-#include "SelfTest_Stack.h"
-#include "SelfTest_IO.h"
-#include "SelfTest_ConfigRegisters.h"
+#include "self_test.h"
 
-/*******************************************************************************
-* Macros
-*******************************************************************************/
-#define MAX_INDEX_VAL (0xFFF0u)
 
-#define CUSTOM_DELAY_VAL (500u)
-
-/* Waiting time, in milliseconds, for proper start-up of ILO */
-#define ILO_START_UP_TIME              (2U)
-
-/* Print Test Result*/
-#define PRINT_TEST_RESULT(test_name, status) \
-    do { \
-        if (OK_STATUS == ret) { \
-            /* Process success */ \
-            printf("\r\n%s test: success\r\n\n", (test_name)); \
-        } \
-        else if (PASS_COMPLETE_STATUS == ret) { \
-            /* Process status */ \
-            printf("\r\n%s test: success\r\n\n", (test_name)); \
-            break; \
-        } \
-        else if (PASS_STILL_TESTING_STATUS == ret) { \
-            /* Print test counter */ \
-            printf("\rTesting %s... count=%d", (test_name), count); \
-        } \
-        else { \
-            /* Process error */ \
-            printf("\r\n%s test: error", (test_name)); \
-            if ((status)) \
-                printf(": %d", (status)); \
-            printf("\r\n"); \
-        } \
-    } while (0)
-
-#if COMPONENT_CAT1A
-    #define CLOCK_INTR_SRC CYBSP_CLOCK_TEST_TIMER_IRQ
-    #define TIMER_INTR_SRC CYBSP_TIMER_IRQ
-#elif COMPONENT_CAT1C
-    #define CLOCK_INTR_SRC  ((NvicMux3_IRQn << 16) | CYBSP_CLOCK_TEST_TIMER_IRQ)
-    #define TIMER_INTR_SRC  ((NvicMux3_IRQn << 16) | CYBSP_TIMER_IRQ)
-#endif
 /*******************************************************************************
 * Global Variables
 *******************************************************************************/
 /* SelfTest API return status */
-static uint8_t ret = 0u;
+uint8_t ret = 0u;
+/*Index for IPs*/
+uint8_t ip_index = 1u;
 
-static uint16_t count = 0u;
+uint16_t test_counter = 0u;
 
-#if COMPONENT_CAT1A
-    /* Array to set shifts for March RAM test. */
-    static uint8_t shiftArrayRam[] = {5u, 0u};
 
-    /* Array to set shifts for March Stack test. */
-    static uint8_t shiftArrayStack[] = {5u, 0u};
+/* Array to set shifts for March RAM test. */
+uint8_t shiftArrayRam[] = {5u, 0u};
+
+/* Array to set shifts for March Stack test. */
+uint8_t shiftArrayStack[] = {5u, 0u};
+
+#if (FLASH_TEST_MODE == FLASH_TEST_FLETCHER64)
+static volatile const uint64_t flash_StoredCheckSum __attribute__((used,
+                                                                   section(".flash_checksum"))) =
+    0xA6238177682F85DEULL;
 #endif
-/*******************************************************************************
-* Function Prototypes
-*******************************************************************************/
-static void IO_Test(void);
-static void Clock_Test(void);
-static void Clock_Test_Init(void);
-static void Interrupt_Test(void);
-static void Interrupt_Test_Init(void);
-static void Flash_Test(void);
-#if COMPONENT_CAT1A
-    static void Stack_March_Test(void);
-    static void SRAM_March_Test(void);
-#elif COMPONENT_CAT1C
-    static void Memory_Test(void);
+#if (FLASH_TEST_MODE == FLASH_TEST_CRC32)
+static volatile const uint32_t flash_StoredCheckSum __attribute__((used,
+                                                                   section(".flash_checksum"))) =
+    0xeb0277e0UL;
 #endif
-
-/*******************************************************************************
-* Function Name: main
-********************************************************************************
-* Summary:
-* This is the main function. It does...
-*    1. Initialize the device and board peripherals and retarget-io for prints
-*    2. Calls the test APIs for testing the followings:
-*        - Program Counter
-*        - CPU registers
-*        - WDT
-*        - Clock
-*        - Interrupt
-*        - Flash
-*        - IO
-*        - Config Registers test
-*        - SRAM/Stack test (March test)
-*        - Stack Overflow test
-*
-* Parameters:
-*  none
-*
-* Return:
-*  int
-*
-*******************************************************************************/
-int main(void)
-{
-    cy_rslt_t result;
-
-    /* Initialize the device and board peripherals */
-    result = cybsp_init();
-
-    /* Board init failed. Stop program execution */
-    if (result != CY_RSLT_SUCCESS)
-    {
-        CY_ASSERT(0);
-    }
-
-    /* Enable global interrupts */
-    __enable_irq();
-
-    /* Initialize retarget-io to use the debug UART port */
-    result = cy_retarget_io_init_fc(CYBSP_DEBUG_UART_TX, CYBSP_DEBUG_UART_RX,
-            CYBSP_DEBUG_UART_CTS,CYBSP_DEBUG_UART_RTS,CY_RETARGET_IO_BAUDRATE);
-
-    /* retarget-io init failed. Stop program execution */
-    if (result != CY_RSLT_SUCCESS)
-    {
-        CY_ASSERT(0);
-    }
-
-
-
-    /* \x1b[2J\x1b[;H - ANSI ESC sequence for clear screen */
-    printf("\x1b[2J\x1b[;H");
-
-    printf("****************** "
-           "Class-B Safety Test for PSoC6: Core Peripheral Resources "
-           "****************** \r\n\n");
-
-    /* Program counter Test */
-    ret = SelfTest_PC();
-    PRINT_TEST_RESULT("Program counter", ret);
-
-    /* CPU Registers Test*/
-    ret = SelfTest_CPU_Registers();
-    PRINT_TEST_RESULT("CPU registers", ret);
-
-    /* Watch Dog Timer Test */
-    ret = SelfTest_WDT();
-    PRINT_TEST_RESULT("WDT", ret);
-
-    /* GPIO Test */
-    IO_Test();
-
-    /* Flash Test */
-    Flash_Test();
-
-    /* Clock Test */
-    Clock_Test();
-
-    /* Interrupt Test */
-    Interrupt_Test();
-
-#if COMPONENT_CAT1A
-    /* SRAM Memory Test */
-    SRAM_March_Test();
-
-    /* Stack Memory Test */
-    Stack_March_Test();
-#elif COMPONENT_CAT1C
-    Memory_Test();
-#endif
-    for (;;)
-    {
-   
-    }
-}
-
 
 /*****************************************************************************
 * Function Name: IO_Test
@@ -251,24 +89,52 @@ int main(void)
 * Return:
 *  void
 *****************************************************************************/
-static void IO_Test(void)
+void IO_Test(void)
 {
     char uart_debug_string[16];
+    if(ERROR_STATUS == ret)
+    {
+        printf("\r\n");
+    }
     ret = SelfTest_IO();
+    PRINT_TEST_RESULT(ip_index++,"GPIO Test",ret);
     if (OK_STATUS != ret)
     {
-        printf("\r\nIO test: error | retruns %d\r\n\n", ret);
         sprintf(uart_debug_string,"PORT %d[%d]",SelfTest_IO_GetPortError(),SelfTest_IO_GetPinError());
         printf(uart_debug_string);
-    }
-    else
-    {
-        printf("\r\nIO test: success\r\n\n");
-
     }
 
 }
 
+/*****************************************************************************
+* Function Name: Wdt_Test
+******************************************************************************
+* Summary:
+* Wdt Test : This function implements the watchdog and windowed watchdog
+* functional test.
+* Note: Only the XMC device supports the windowed watchdog feature.
+*
+* Parameters:
+*  void
+*
+* Return:
+*  void
+*****************************************************************************/
+void Wdt_Test(void)
+{
+    if(ERROR_STATUS == ret)
+    {
+        printf("\r\n");
+    }
+#if COMPONENT_CAT1C && WWDT_SELF_TEST_ENABLE
+    ret = SelfTest_Windowed_WDT();
+    PRINT_TEST_RESULT(ip_index++,"Windowed Watchdog Test", ret);
+#else
+    ret = SelfTest_WDT();
+    PRINT_TEST_RESULT(ip_index++,"Watchdog Test", ret);
+#endif
+
+}
 
 /*****************************************************************************
 * Function Name: Clock_Test
@@ -283,29 +149,39 @@ static void IO_Test(void)
 * Return:
 *  void
 *****************************************************************************/
-static void Clock_Test(void)
+void Clock_Test(void)
 {
+    if(ERROR_STATUS == ret)
+    {
+        printf("\r\n");
+    }
+
     Clock_Test_Init();
 
     for (;;)
     {
         ret = SelfTest_Clock(CYBSP_CLOCK_TEST_TIMER_HW, CYBSP_CLOCK_TEST_TIMER_NUM);
-
-        PRINT_TEST_RESULT("Clock", ret);
-
+        PRINT_TEST_RESULT(ip_index,"Clock Test", ret);
         if (PASS_STILL_TESTING_STATUS != ret) {
             break;
         }
 
-        count++;
-        if (count > MAX_INDEX_VAL){
-            count = 0u;
+        test_counter++;
+        if (test_counter > MAX_INDEX_VAL){
+            test_counter = 0u;
         }
     }
+    if (ERROR_STATUS == ret)
+    {
+        printf("\r\n");
+    }
+    Cy_SysLib_ClearResetReason();
     /* Either you need to clear WDT interrupt periodically or
      * disable it to ensure no WDT reset */
     Cy_WDT_ClearInterrupt();
+    Cy_WDT_Unlock();
     Cy_WDT_Disable();
+    ip_index++;
 }
 
 /*****************************************************************************
@@ -322,7 +198,7 @@ static void Clock_Test(void)
 *  void
 *
 *****************************************************************************/
-static void Clock_Test_Init(void)
+void Clock_Test_Init(void)
 {
     cy_en_tcpwm_status_t tcpwm_res;
     cy_en_sysint_status_t sysint_res;
@@ -405,13 +281,17 @@ static void Clock_Test_Init(void)
 * Return:
 *  void
 *****************************************************************************/
-static void Interrupt_Test(void)
+void Interrupt_Test(void)
 {
+    if(ERROR_STATUS == ret)
+    {
+        printf("\r\n");
+    }
     Interrupt_Test_Init();
 
     ret = SelfTest_Interrupt(CYBSP_TIMER_HW, CYBSP_TIMER_NUM);
 
-    PRINT_TEST_RESULT("Interrupt", ret);
+    PRINT_TEST_RESULT(ip_index++,"Interrupt Test", ret);
 }
 
 /******************************************************************************
@@ -427,7 +307,7 @@ static void Interrupt_Test(void)
 *  void
 *
 ******************************************************************************/
-static void Interrupt_Test_Init(void)
+void Interrupt_Test_Init(void)
 {
     cy_rslt_t result;
     cy_stc_sysint_t intrCfg =
@@ -464,7 +344,6 @@ static void Interrupt_Test_Init(void)
 
 }
 
-#if COMPONENT_CAT1A
 /*****************************************************************************
 * Function Name: Stack_March_Test
 ******************************************************************************
@@ -477,13 +356,16 @@ static void Interrupt_Test_Init(void)
 * Return:
 *  void
 *****************************************************************************/
-static void Stack_March_Test(void)
+void Stack_March_Test(void)
 {
     uint8_t shiftIndexStack = 0u;
 
     /* Init March Stack SelfTest */
     SelfTests_Init_March_Stack_Test(0u);
-
+    if(ERROR_STATUS == ret)
+    {
+        printf("\r\n");
+    }
     for(;;)
     {
         ret = SelfTests_Stack_March();
@@ -491,14 +373,13 @@ static void Stack_March_Test(void)
         if(ERROR_STATUS == ret)
         {
             /* Process error */
-            printf("\r\nStack March test: error\r\n");
+            PRINT_TEST_RESULT(ip_index,"Stack March Test", ret);
             break;
         }
 
         /* If all Stack tested we can change shift */
         else if(PASS_COMPLETE_STATUS == ret)
         {
-            printf("\r\nStack March test Index: %d ", shiftIndexStack);
 
             /* Check if boundaries of "shiftArrayStack" has not been completed */
             if(shiftIndexStack >= (sizeof(shiftArrayStack) - 1u))
@@ -523,9 +404,9 @@ static void Stack_March_Test(void)
 
     if (PASS_COMPLETE_STATUS == ret)
     {
-        printf("\r\nStack March test : success\r\n");
+        PRINT_TEST_RESULT(ip_index,"Stack March Test", ret);
     }
-
+    ip_index++;
 }
 
 /*****************************************************************************
@@ -540,9 +421,13 @@ static void Stack_March_Test(void)
 * Return:
 *  void
 *****************************************************************************/
-static void SRAM_March_Test(void)
+void SRAM_March_Test(void)
 {
     uint8_t shiftIndexRam = 0u;
+    if(ERROR_STATUS == ret)
+    {
+        printf("\r\n");
+    }
 
     /* Init SRAM March Self test */
     SelfTests_Init_March_SRAM_Test(0u);
@@ -554,14 +439,15 @@ static void SRAM_March_Test(void)
         if (ERROR_STATUS == ret)
         {
             /*Process error*/
-            printf("\r\nSRAM March test: error\r\n");
+            PRINT_TEST_RESULT(ip_index,"SRAM March Test", ret);
             break;
         }
 
         /* If all RAM tested we can change shift */
         else if(PASS_COMPLETE_STATUS == ret)
         {
-            printf("\r\nSRAM March test Index: %d ", shiftIndexRam);
+            /* Re-initialize test with new shift */
+            SelfTests_Init_March_SRAM_Test(shiftArrayRam[shiftIndexRam]);
 
             /* Check if boundaries of "shiftArrayRam" has not been completed */
             if(shiftIndexRam >= (sizeof(shiftArrayRam) - 1u))
@@ -574,22 +460,21 @@ static void SRAM_March_Test(void)
             {
                 /* If no - increase Index */
                 shiftIndexRam++;
-                /* Initialize SRAM March test with new shift : update Test_SRAM_Addr in .s file*/
-                SelfTests_Init_March_SRAM_Test(shiftArrayRam[shiftIndexRam]);
+
             }
+            break;
         }
-        else
-        {
-            /* Do Nothing */
-        }
+
     }
+
+
     if (PASS_COMPLETE_STATUS == ret)
     {
-        printf("\r\nSRAM March test : success\r\n");
+        PRINT_TEST_RESULT(ip_index,"SRAM March Test", ret);
     }
+    ip_index++;
 }
 
-#elif COMPONENT_CAT1C
 /*****************************************************************************
 * Function Name: Memory_Test
 ******************************************************************************
@@ -602,11 +487,14 @@ static void SRAM_March_Test(void)
 * Return:
 *  void
 *****************************************************************************/
-static void Memory_Test(void)
+void Stack_Memory_Test(void)
 {
     /* Init Stack SelfTest */
-    SelfTests_Init_Stack_Test();
-
+    SelfTests_Init_Stack_Test(PATTERN_BLOCK_SIZE);
+    if(ERROR_STATUS == ret)
+    {
+        printf("\r\n");
+    }
     /*******************************/
     /* Run Stack Self Test...      */
     /*******************************/
@@ -614,27 +502,22 @@ static void Memory_Test(void)
     if ((ERROR_STACK_OVERFLOW & ret))
     {
          /* Process error */
-        printf("Error: Stack Overflow\r\n");
-        if ((ERROR_STACK_UNDERFLOW & ret))
-        {
-            /* Process error */
-            printf("Error: Stack underflow\r\n");
-        }
+        PRINT_TEST_RESULT(ip_index,"Stack Overflow Test", ret);
     }
     else if ((ERROR_STACK_UNDERFLOW & ret))
     {
          /* Process error */
-        printf("Error: Stack underflow\r\n");
-     }
+        PRINT_TEST_RESULT(ip_index,"Stack Underflow Test", ret);
+    }
 
     else
     {
-        printf("\r\nMemory test : success\r\n");
+        PRINT_TEST_RESULT(ip_index,"Stack Memory Test", ret);
     }
     Cy_SysLib_Delay(CUSTOM_DELAY_VAL);
-
+    ip_index++;
 }
-#endif
+
 /*****************************************************************************
 * Function Name: Flash_Test
 ******************************************************************************
@@ -648,24 +531,27 @@ static void Memory_Test(void)
 * Return:
 *  void
 *****************************************************************************/
-static void Flash_Test(void)
+void Flash_Test(void)
 {
     /* Variable for output calculated Flash Checksum */
     uint8_t flash_CheckSum_temp;
+    if(ERROR_STATUS == ret)
+    {
+        printf("\r\n");
+    }
+    SelfTest_Flash_init(CY_FLASH_BASE,FLASH_END_ADDR,flash_StoredCheckSum);
 
     for(;;)
     {
         ret =  SelfTest_FlashCheckSum(FLASH_DOUBLE_WORDS_TO_TEST);
-        printf("\r\nret val : %d\r\n",ret);
-
-        PRINT_TEST_RESULT("Flash", ret);
+        PRINT_TEST_RESULT(ip_index,"Flash Test", ret);
 
         if (ERROR_STATUS == ret)
         {
 #if(FLASH_TEST_MODE == FLASH_TEST_CRC32)
             printf("\r\nFLASH CRC: 0x");
 #elif (FLASH_TEST_MODE == FLASH_TEST_FLETCHER64)
-            printf("\r\nFLASH CHECKSUM: 0x");
+            printf("\tFLASH CHECKSUM: 0x");
 #endif
 
             /* Output calculated Flash Checksum */
@@ -684,11 +570,157 @@ static void Flash_Test(void)
         {
             /* Do Nothing */
         }
-        count++;
-        if (count > MAX_INDEX_VAL) {
-            count = 0u;
+        test_counter++;
+        if (test_counter > MAX_INDEX_VAL) {
+            test_counter = 0u;
         }
     }
+    ip_index++;
+}
+
+/*****************************************************************************
+* Function Name: FPU_Test
+******************************************************************************
+* Summary:
+* FPU Test : The FPU registers test detects stuck-at faults in the FPU by
+* using the checkerboard test.
+*
+* Parameters:
+*  void
+*
+* Return:
+*  void
+*****************************************************************************/
+void FPU_Test(void)
+{
+    if(ERROR_STATUS == ret)
+    {
+        printf("\r\n");
+    }
+#if COMPONENT_CAT1A
+    Cy_SystemInitFpuEnable();
+#endif
+    ret = SCB_GetFPUType();
+
+    /**********************************/
+    /* Run FPU Registers Self Test... */
+    /**********************************/
+    ret = SelfTest_FPU_Registers();
+    PRINT_TEST_RESULT(ip_index++,"FPU Register Test", ret);
+
+}
+
+#if !defined(CY_DEVICE_PSOC6ABLE2)
+/*****************************************************************************
+* Function Name: DMAC_Test
+******************************************************************************
+* Summary:
+* DMAC Test :
+*
+* Parameters:
+*  void
+*
+* Return:
+*  void
+*****************************************************************************/
+void DMAC_Test(void)
+{
+    if(ERROR_STATUS == ret)
+    {
+        printf("\r\n");
+    }
+    /**********************************/
+    /* Run DMAC Self Test... */
+    /**********************************/
+    ret = SelfTest_DMAC(DMAC_0_HW, DMAC_0_CHANNEL, &DMAC_0_Descriptor_0, &DMAC_0_Descriptor_1,
+            &DMAC_0_Descriptor_0_config,  &DMAC_0_Descriptor_1_config,
+            &DMAC_0_channelConfig, DMAC_INPUT_TRIG_MUX);
+
+    PRINT_TEST_RESULT(ip_index++,"DMAC Test", ret);
+
+}
+#endif
+
+/*****************************************************************************
+* Function Name: DMA_DW_Test
+******************************************************************************
+* Summary:
+* DMA DW Test :
+*
+* Parameters:
+*  void
+*
+* Return:
+*  void
+*****************************************************************************/
+void DMA_DW_Test(void)
+{
+    if(ERROR_STATUS == ret)
+    {
+        printf("\r\n");
+    }
+    /**********************************/
+    /* Run DMA DW Self Test... */
+    /**********************************/
+#if defined(CY_DEVICE_PSOC6ABLE2)
+    ret = SelfTest_DMA_DW(DMA_DW_HW, DMA_DW_CHANNEL, &DMA_DW_Descriptor_0, &DMA_DW_Descriptor_1,
+            &DMA_DW_Descriptor_0_config,  &DMA_DW_Descriptor_1_config,
+            &DMA_DW_channelConfig, (en_trig_input_grp0_t)TRIG0_OUT_CPUSS_DW0_TR_IN0);
+#else
+    ret = SelfTest_DMA_DW(DMA_DW_HW, DMA_DW_CHANNEL, &DMA_DW_Descriptor_0, &DMA_DW_Descriptor_1,
+            &DMA_DW_Descriptor_0_config,  &DMA_DW_Descriptor_1_config,
+            &DMA_DW_channelConfig, TRIG_OUT_MUX_0_PDMA0_TR_IN0);
+#endif
+
+
+
+    PRINT_TEST_RESULT(ip_index++,"DMA DW Test", ret);
+
+}
+
+/*****************************************************************************
+* Function Name: Start_Up_Test
+******************************************************************************
+* Summary:
+* Start Up Test : This function checks the startup configuration registers.
+*
+* Parameters:
+*  void
+*
+* Return:
+*  void
+*****************************************************************************/
+void Start_Up_Test(void)
+{
+    if(ERROR_STATUS == ret)
+    {
+        printf("\r\n");
+    }
+#if COMPONENT_CAT1A
+    /* This function initilizes the AREF address depending on the device.*/
+    SelfTests_Init_StartUp_ConfigReg();
+#endif
+
+#if (STARTUP_CFG_REGS_MODE == CFG_REGS_TO_FLASH_MODE)
+
+    /*******************************/
+    /* Save Start-Up registers...  */
+    /*******************************/
+    if (CY_FLASH_DRV_SUCCESS  != SelfTests_Save_StartUp_ConfigReg())
+    {
+        /* Process error */
+        printf("Error: Can't save Start-Up Config Registers\r\n");
+    }
+
+#endif /* End (STARTUP_CFG_REGS_MODE == CFG_REGS_TO_FLASH_MODE) */
+    /**********************************/
+    /* Run Start-Up regs Self Test... */
+    /**********************************/
+    ret = SelfTests_StartUp_ConfigReg();
+
+    /* Process error */
+    PRINT_TEST_RESULT(ip_index++,"Start-Up Register Test",ret);
+
 }
 
 /* [] END OF FILE */

@@ -1,18 +1,18 @@
 # Class-B Safety Test: Core peripherals
 
-This code example demonstrates the use of class-B Safety Test Library to test the core peripherals of the MCU, which are critical for ensuring safety. The example includes tests such as CPU Registers, Program Counter, WDT, clock, interrupt, IO, flash (Fletcher's test + CRC test), and config Registers.
+This code example demonstrates the use of class-B Safety Test Library to test the core peripherals of the MCU, which are critical for ensuring safety. The example includes tests such as CPU Registers, Program Counter, WDT, clock, interrupt, IO, DMA, DW, flash (Fletcher's test + CRC test), and config Registers.
 
 The example also evaluates SRAM/Stack using the March test and checks for stack overflow. These tests aim to validate the reliability and robustness of the core peripherals, providing assurance for the safety and dependability of the applications built with the PSoC™ 6 MCU and XMC7000 MCU.
 
 [View this README on GitHub.](https://github.com/Infineon/mtb-example-ce239718-safety-core-test)
 
-[Provide feedback on this code example.](https://cypress.co1.qualtrics.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyMzk3MTgiLCJTcGVjIE51bWJlciI6IjAwMi0zOTcxOCIsIkRvYyBUaXRsZSI6IkNsYXNzLUIgU2FmZXR5IFRlc3Q6IENvcmUgcGVyaXBoZXJhbHMiLCJyaWQiOiJzZGFrIiwiRG9jIHZlcnNpb24iOiIxLjAuMCIsIkRvYyBMYW5ndWFnZSI6IkVuZ2xpc2giLCJEb2MgRGl2aXNpb24iOiJNQ0QiLCJEb2MgQlUiOiJJQ1ciLCJEb2MgRmFtaWx5IjoiUFNPQyJ9)
+[Provide feedback on this code example.](https://cypress.co1.qualtrics.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyMzk3MTgiLCJTcGVjIE51bWJlciI6IjAwMi0zOTcxOCIsIkRvYyBUaXRsZSI6IkNsYXNzLUIgU2FmZXR5IFRlc3Q6IENvcmUgcGVyaXBoZXJhbHMiLCJyaWQiOiJzZGFrIiwiRG9jIHZlcnNpb24iOiIyLjAuMCIsIkRvYyBMYW5ndWFnZSI6IkVuZ2xpc2giLCJEb2MgRGl2aXNpb24iOiJNQ0QiLCJEb2MgQlUiOiJJQ1ciLCJEb2MgRmFtaWx5IjoiUFNPQyJ9)
 
 
 ## Requirements
 
-- [ModusToolbox&trade;](https://www.infineon.com/modustoolbox) v3.1 or later (tested with v3.1)
-- Board support package (BSP) minimum required version: 3.0.0
+- [ModusToolbox&trade;](https://www.infineon.com/modustoolbox) v3.2 or later (tested with v3.2)
+- Board support package (BSP) minimum required version: v4.2.0
 - Programming language: C
 - Associated parts: [PSoC&trade; 6 MCU](https://www.infineon.com/cms/en/product/microcontroller/32-bit-psoc-arm-cortex-microcontroller/psoc-6-32-bit-arm-cortex-m4-mcu), [XMC7000 MCU](https://www.infineon.com/cms/en/product/microcontroller/32-bit-industrial-microcontroller-based-on-arm-cortex-m)
 
@@ -21,19 +21,30 @@ The example also evaluates SRAM/Stack using the March test and checks for stack 
 
 - GNU Arm&reg; Embedded Compiler v11.3.1 (`GCC_ARM`) – Default value of `TOOLCHAIN`
 
+
 ## Supported kits (make variable 'TARGET')
 
 - [PSoC&trade; 62S2 Wi-Fi Bluetooth&reg; Prototyping Kit](https://www.infineon.com/CY8CPROTO-062S2-43439) (`CY8CPROTO-062S2-43439`) – Default value of `TARGET`
 - [PSoC&trade; 6 Wi-Fi Bluetooth&reg; Prototyping Kit](https://www.infineon.com/CY8CPROTO-062-4343W) (`CY8CPROTO-062-4343W`)
+- [PSoC&trade; 6 Wi-Fi Bluetooth&reg; Pioneer Kit](https://www.infineon.com/CY8CKIT-062-WIFI-BT) (`CY8CKIT-062-WIFI-BT`)
+- [PSoC&trade; 6 Bluetooth&reg; LE Pioneer Kit](https://www.infineon.com/CY8CKIT-062-BLE) (`CY8CKIT-062-BLE`)
+- [PSoC&trade; 6 Bluetooth&reg; LE Prototyping Kit](https://www.infineon.com/CY8CPROTO-063-BLE) (`CY8CPROTO-063-BLE`)
 - [PSoC&trade; 62S2 Wi-Fi Bluetooth&reg; Pioneer Kit](https://www.infineon.com/CY8CKIT-062S2-43012) (`CY8CKIT-062S2-43012`)
+- [PSoC&trade; 62S1 Wi-Fi Bluetooth&reg; Pioneer Kit](https://www.infineon.com/CYW9P62S1-43438EVB-01) (`CYW9P62S1-43438EVB-01`)
+- [PSoC&trade; 62S1 Wi-Fi Bluetooth&reg; Pioneer Kit](https://www.infineon.com/CYW9P62S1-43012EVB-01) (`CYW9P62S1-43012EVB-01`)
+- [PSoC&trade; 64 "Secure Boot" Wi-Fi Bluetooth&reg; Pioneer Kit](https://www.infineon.com/CY8CKIT-064B0S2-4343W) (`CY8CKIT-064B0S2-4343W`)
+- [PSoC&trade; 62S4 Pioneer Kit](https://www.infineon.com/CY8CKIT-062S4) (`CY8CKIT-062S4`)
 - [PSoC&trade; 62S2 Evaluation Kit](https://www.infineon.com/CY8CEVAL-062S2) (`CY8CEVAL-062S2`, `CY8CEVAL-062S2-LAI-4373M2`, `CY8CEVAL-062S2-MUR-43439M2`, `CY8CEVAL-062S2-LAI-43439M2`, `CY8CEVAL-062S2-MUR-4373EM2`, `CY8CEVAL-062S2-MUR-4373M2`,`CY8CEVAL-062S2-CYW43022CUB`)
 - [XMC7200 Evaluation Kit](https://www.infineon.com/KIT_XMC72_EVK) (`KIT_XMC72_EVK`, `KIT_XMC72_EVK_MUR_43439M2`)
 - [PSoC&trade; 62S3 Wi-Fi Bluetooth&reg; Prototyping Kit](https://www.infineon.com/CY8CPROTO-062S3-4343W) (`CY8CPROTO-062S3-4343W`)
+- [XMC7100 Evaluation Kit](https://www.infineon.com/KIT_XMC71_EVK_LITE_V1) (`KIT_XMC71_EVK_LITE_V1`)
+
 
 ## Hardware setup
 
 This example uses the board's default configuration. See the kit user guide to ensure that the board is configured correctly.
 
+> **Note:** The PSoC&trade; 6 Bluetooth&reg; LE Pioneer Kit (CY8CKIT-062-BLE) and the PSoC&trade; 6 Wi-Fi Bluetooth&reg; Pioneer Kit (CY8CKIT-062-WIFI-BT) ship with KitProg2 installed. ModusToolbox&trade; requires KitProg3. Before using this code example, make sure that the board is upgraded to KitProg3. The tool and instructions are available in the [Firmware Loader](https://github.com/Infineon/Firmware-loader) GitHub repository. If you do not upgrade, you will see an error like "unable to find CMSIS-DAP device" or "KitProg firmware is out of date".
 
 ## Software setup
 
@@ -127,25 +138,6 @@ For more details, see the [Visual Studio Code for ModusToolbox&trade; user guide
 
 </details>
 
-
-<details><summary><b>Keil µVision</b></summary>
-
-Double-click the generated *{project-name}.cprj* file to launch the Keil µVision IDE.
-
-For more details, see the [Keil µVision for ModusToolbox&trade; user guide](https://www.infineon.com/MTBuVisionUserGuide) (locally available at *{ModusToolbox&trade; install directory}/docs_{version}/mt_uvision_user_guide.pdf*).
-
-</details>
-
-
-<details><summary><b>IAR Embedded Workbench</b></summary>
-
-Open IAR Embedded Workbench manually, and create a new project. Then select the generated *{project-name}.ipcf* file located in the project directory.
-
-For more details, see the [IAR Embedded Workbench for ModusToolbox&trade; user guide](https://www.infineon.com/MTBIARUserGuide) (locally available at *{ModusToolbox&trade; install directory}/docs_{version}/mt_iar_user_guide.pdf*).
-
-</details>
-
-
 <details><summary><b>Command line</b></summary>
 
 If you prefer to use the CLI, open the appropriate terminal, and navigate to the project directory. On Windows, use the command-line 'modus-shell' program; on Linux and macOS, you can use any terminal application. From there, you can run various `make` commands.
@@ -157,6 +149,8 @@ For more details, see the [ModusToolbox&trade; tools package user guide](https:/
 
 
 ## Operation
+
+If using a PSoC&trade; 64 "Secure" MCU kit (like CY8CKIT-064B0S2-4343W), the PSoC&trade; 64 device must be provisioned with keys and policies before being programmed. Follow the instructions in the ["Secure Boot" SDK user guide](https://www.infineon.com/dgdlac/Infineon-PSoC_64_Secure_MCU_Secure_Boot_SDK_User_Guide-Software-v07_00-EN.pdf?fileId=8ac78c8c7d0d8da4017d0f8c361a7666) to provision the device. If the kit is already provisioned, copy-paste the keys and policy folder to the application folder.
 
 1. Connect the board to your PC using the provided USB cable through the KitProg3 USB connector.
 
@@ -191,10 +185,14 @@ For more details, see the [ModusToolbox&trade; tools package user guide](https:/
       ```
    </details>
 
-4. After programming, the application starts automatically. Confirm that **CAT1 class-B safety test: Core peripherals** is displayed on the UART terminal.
+4. After programming, the application starts automatically. Confirm that **Class-B Safety Test for PSoC6: Core Peripheral Resources** is displayed on the UART terminal.
 
 5. The serial terminal should display the result of all the tests covered in this example.
-> **Note:** For the flash test to pass, it is recommended to copy and paste the checksum printed on the teraterm to `flash_StoredCheckSum` variable in the *SelfTest_Flash.c* file for respective kits (i.e. under the macro CY_CPU_CORTEX_M4 for PSoC™ 6 MCU and and CY_CPU_CORTEX_M7 for XMC7000 MCU).
+   **Figure 1. Terminal output on program startup**
+
+   ![](images/classb-terminal-output.png)
+
+> **Note:** For the flash test to pass, it is recommended to copy and paste the checksum printed on the teraterm to `flash_StoredCheckSum` variable in the *self_est_.c* file for respective kits.
 
 ## Debugging
 
@@ -240,6 +238,7 @@ By executing these tests, the example ensures the proper functioning of the core
  UART (HAL)| CYBSP_DEBUG_UART| UART HAL object used by Retarget-IO for the Debug UART port
  Counter (PDL)   | CYBSP_CLOCK_TEST_TIMER   | Counter used for measuring clock with reference clock
  Counter (PDL)    | CYBSP_TIMER     | Counter used to measure number of interrupts within a period
+ Data Wire (PDL)    | DMA_DW     | Data wire object used to test data wire functionality
 
 <br>
 
@@ -264,7 +263,7 @@ The flash test offers two types of tests which can be selected using `FLASH_TEST
 
 Both tests involve comparing the precalculated checksum with the actual checksum calculated from the data. Both, the precalculated checksum and the checksum data are stored in the flash. Custom linker scripts are used to store the precalculated checksum at the appropriate location in the flash.
 
-To use the test, the user needs to update the precalculated checksum in the `flash_StoredCheckSum` variable in the *SelfTest_Flash.c* file whenever there is a change in the application source binary. Hence, it is recommended to copy and paste the checksum printed on the teraterm to `flash_StoredCheckSum` variable in the *SelfTest_Flash.c* file, which is a middleware file. During the test, the actual checksum is calculated based on the data stored inside the flash. Hence, it is recommended to erase the entire flash before programming it so that the actual checksum calculated during the test does not mismatch.
+To use the test, the user needs to update the precalculated checksum in the `flash_StoredCheckSum` variable in the *self_est_.c* file whenever there is a change in the application source binary. Hence, it is recommended to copy and paste the checksum printed on the teraterm to `flash_StoredCheckSum` variable in the *self_est_.c* file, which is a source file. During the test, the actual checksum is calculated based on the data stored inside the flash. Hence, it is recommended to erase the entire flash before programming it so that the actual checksum calculated during the test does not mismatch.
 
 #### 6. Interrupt test:
 The Interrupt test implements the independent time-slot monitoring defined in section H.2.18.10.4 of the IEC 60730 standard. It verifies that the number of interrupts that occurred is within a predefined range and also checks whether interrupts occur regularly. The test uses the interrupt source driven by the timer and checks the interrupt controller.
@@ -294,6 +293,26 @@ The purpose of the stack overflow test is to verify that the stack does not over
 In this test, a fixed pattern is used to fill a block of memory below the stack and periodic checks are performed to detect any corruption. It verifies the stored test pattern within a specific area of the stack, typically located at the end where the stack grows.
 
 By periodically checking for corruption, the test ensures the integrity of the stored pattern and confirms proper stack operation. This helps prevent potential stack overflow issues and ensures system stability.
+
+#### 11. FPU Registers test:
+The FPU registers test detects stuck-at faults in the FPU by using the checkerboard test. This test ensures that the bits in the registers are not stuck at value '0' or '1'. 
+The registers are tested by performing a write/read/compare test sequence using a checkerboard pattern (0x5555 5555, then 0xaaaa aaaaa). These binary sequences are valid floating point values. The test returns an error code if the returned values do not match.
+
+#### 12. Program Flow test:
+A specific method is used to check program execution flow. For every critical execution code block, unique numbers are added to or subtracted from complementary counters before block execution and immediately after execution. These procedures allow you to see if the code block is correctly called from the main program flow and to check if the block is correctly executed. As long as there are always the same number of exit and entry points, the counter pair will always be complementary after each tested block. Any unexpected values should be treated as a program flow execution error. 
+
+#### 13. IPC (Inter-Process Communication / Inter-Processor Communication) test:
+The IPC block is tested for multi core MCUs and is tested using the Cy_IPC_Pipe wrapper functions. An IPC callback function is registered first, so that callback gets called i.e. the test succeeds, when a message is sent to the pipe using IPC_Pipe_SendMessage. If the callback is not called after SendMessage, the test fails.
+ 
+#### 14. DMA / DW test:
+The DataWire blocks are tested using the following procedure:
+   1. A destination block of size 64 bytes is set to 0 with DW transfers using 16 x 32-bit transfers from a fixed address.
+   2. The destination block is verified to be all 0.
+   3. The same destination block is filled with 00 00 ff by using an 8-bit DMA from a fixed address with an increment of 3 and a length of 22 (64+(3-1))/3.
+   4. The destination block is verified to contain the correct pattern (shown below with lowest address first):
+         ```
+      ff0000ff0000ff0000ff0000ff0000ff0000ff0000ff0000…
+      ```
 
 
 ## Related resources
@@ -325,6 +344,7 @@ Document title: *CE239718* - *Class-B safety test: Core peripherals*
  Version | Description of change
  ------- | ---------------------
  1.0.0   | New code example
+ 2.0.0   | Updated to add new BSPs and IPs
 
 <br>
 
