@@ -156,13 +156,15 @@ int main(void)
     /* FPU Test */
     FPU_Test();
 
-#if !defined(CY_DEVICE_PSOC6ABLE2)
+    #if (!defined(CY_DEVICE_PSOC6ABLE2)&& !defined (CY_DEVICE_SECURE))
     /* DMAC Test */
     DMAC_Test();
-#endif
+    #endif
 
+    #if !defined (CY_DEVICE_SECURE)
     /* DMA DW Test */
     DMA_DW_Test();
+    #endif
 
     /* IPC Test */
     ret = SelfTest_IPC();

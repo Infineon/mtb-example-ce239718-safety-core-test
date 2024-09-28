@@ -68,7 +68,7 @@ uint8_t shiftArrayStack[] = {5u, 0u};
 #if (FLASH_TEST_MODE == FLASH_TEST_FLETCHER64)
 static volatile const uint64_t flash_StoredCheckSum __attribute__((used,
                                                                    section(".flash_checksum"))) =
-    0xA6238177682F85DEULL;
+    0xC460CECE02BD9616;
 #endif
 #if (FLASH_TEST_MODE == FLASH_TEST_CRC32)
 static volatile const uint32_t flash_StoredCheckSum __attribute__((used,
@@ -610,7 +610,7 @@ void FPU_Test(void)
 
 }
 
-#if !defined(CY_DEVICE_PSOC6ABLE2)
+#if (!defined(CY_DEVICE_PSOC6ABLE2)&& !defined (CY_DEVICE_SECURE))
 /*****************************************************************************
 * Function Name: DMAC_Test
 ******************************************************************************
@@ -641,6 +641,7 @@ void DMAC_Test(void)
 }
 #endif
 
+#if !defined (CY_DEVICE_SECURE)
 /*****************************************************************************
 * Function Name: DMA_DW_Test
 ******************************************************************************
@@ -677,6 +678,7 @@ void DMA_DW_Test(void)
     PRINT_TEST_RESULT(ip_index++,"DMA DW Test", ret);
 
 }
+#endif
 
 /*****************************************************************************
 * Function Name: Start_Up_Test

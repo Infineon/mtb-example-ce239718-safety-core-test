@@ -116,10 +116,12 @@ void Interrupt_Test_Init(void);
 void Flash_Test(void);
 void Wdt_Test(void);
 void FPU_Test(void);
-#if !defined(CY_DEVICE_PSOC6ABLE2)
+#if (!defined(CY_DEVICE_PSOC6ABLE2)&& !defined (CY_DEVICE_SECURE))
     void DMAC_Test(void);
 #endif
-void DMA_DW_Test(void);
+#if !defined (CY_DEVICE_SECURE)
+    void DMA_DW_Test(void);
+#endif
 void Start_Up_Test(void);
 void Stack_March_Test(void);
 void SRAM_March_Test(void);

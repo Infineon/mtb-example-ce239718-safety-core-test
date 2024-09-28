@@ -1,18 +1,18 @@
-# Class-B Safety Test: Core peripherals
+# Class-B safety test: Core peripherals
 
-This code example demonstrates the use of class-B Safety Test Library to test the core peripherals of the MCU, which are critical for ensuring safety. The example includes tests such as CPU Registers, Program Counter, WDT, clock, interrupt, IO, DMA, DW, flash (Fletcher's test + CRC test), and config Registers.
+This code example demonstrates the usage of class-B safety test Library to test the core peripherals of the MCU, which are critical for ensuring safety. The example includes tests such as CPU registers, program counter, WDT, clock, interrupt, IO, DMA, DW, flash (Fletcher's test + CRC test), and config registers.
 
-The example also evaluates SRAM/Stack using the March test and checks for stack overflow. These tests aim to validate the reliability and robustness of the core peripherals, providing assurance for the safety and dependability of the applications built with the PSoC™ 6 MCU and XMC7000 MCU.
+The example also evaluates SRAM/stack using the March test and checks for stack overflow. These tests aim to validate the reliability and robustness of the core peripherals, assuring the safety and dependability of the applications built with PSoC&trade; 6 and XMC7000 MCUs.
 
 [View this README on GitHub.](https://github.com/Infineon/mtb-example-ce239718-safety-core-test)
 
-[Provide feedback on this code example.](https://cypress.co1.qualtrics.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyMzk3MTgiLCJTcGVjIE51bWJlciI6IjAwMi0zOTcxOCIsIkRvYyBUaXRsZSI6IkNsYXNzLUIgU2FmZXR5IFRlc3Q6IENvcmUgcGVyaXBoZXJhbHMiLCJyaWQiOiJzZGFrIiwiRG9jIHZlcnNpb24iOiIyLjAuMCIsIkRvYyBMYW5ndWFnZSI6IkVuZ2xpc2giLCJEb2MgRGl2aXNpb24iOiJNQ0QiLCJEb2MgQlUiOiJJQ1ciLCJEb2MgRmFtaWx5IjoiUFNPQyJ9)
+[Provide feedback on this code example.](https://cypress.co1.qualtrics.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyMzk3MTgiLCJTcGVjIE51bWJlciI6IjAwMi0zOTcxOCIsIkRvYyBUaXRsZSI6IkNsYXNzLUIgc2FmZXR5IHRlc3Q6IENvcmUgcGVyaXBoZXJhbHMiLCJyaWQiOiJzZGFrIiwiRG9jIHZlcnNpb24iOiIyLjEuMCIsIkRvYyBMYW5ndWFnZSI6IkVuZ2xpc2giLCJEb2MgRGl2aXNpb24iOiJNQ0QiLCJEb2MgQlUiOiJJQ1ciLCJEb2MgRmFtaWx5IjoiUFNPQyJ9)
 
 
 ## Requirements
 
 - [ModusToolbox&trade;](https://www.infineon.com/modustoolbox) v3.2 or later (tested with v3.2)
-- Board support package (BSP) minimum required version: v4.2.0
+- Board support package (BSP) minimum required version: 4.2.0
 - Programming language: C
 - Associated parts: [PSoC&trade; 6 MCU](https://www.infineon.com/cms/en/product/microcontroller/32-bit-psoc-arm-cortex-microcontroller/psoc-6-32-bit-arm-cortex-m4-mcu), [XMC7000 MCU](https://www.infineon.com/cms/en/product/microcontroller/32-bit-industrial-microcontroller-based-on-arm-cortex-m)
 
@@ -138,6 +138,25 @@ For more details, see the [Visual Studio Code for ModusToolbox&trade; user guide
 
 </details>
 
+
+<details><summary><b>Keil µVision</b></summary>
+
+Double-click the generated *{project-name}.cprj* file to launch the Keil µVision IDE.
+
+For more details, see the [Keil µVision for ModusToolbox&trade; user guide](https://www.infineon.com/MTBuVisionUserGuide) (locally available at *{ModusToolbox&trade; install directory}/docs_{version}/mt_uvision_user_guide.pdf*).
+
+</details>
+
+
+<details><summary><b>IAR Embedded Workbench</b></summary>
+
+Open IAR Embedded Workbench manually, and create a new project. Then select the generated *{project-name}.ipcf* file located in the project directory.
+
+For more details, see the [IAR Embedded Workbench for ModusToolbox&trade; user guide](https://www.infineon.com/MTBIARUserGuide) (locally available at *{ModusToolbox&trade; install directory}/docs_{version}/mt_iar_user_guide.pdf*).
+
+</details>
+
+
 <details><summary><b>Command line</b></summary>
 
 If you prefer to use the CLI, open the appropriate terminal, and navigate to the project directory. On Windows, use the command-line 'modus-shell' program; on Linux and macOS, you can use any terminal application. From there, you can run various `make` commands.
@@ -188,11 +207,19 @@ If using a PSoC&trade; 64 "Secure" MCU kit (like CY8CKIT-064B0S2-4343W), the PSo
 4. After programming, the application starts automatically. Confirm that **Class-B Safety Test for PSoC6: Core Peripheral Resources** is displayed on the UART terminal.
 
 5. The serial terminal should display the result of all the tests covered in this example.
+
    **Figure 1. Terminal output on program startup**
 
    ![](images/classb-terminal-output.png)
 
-> **Note:** For the flash test to pass, it is recommended to copy and paste the checksum printed on the teraterm to `flash_StoredCheckSum` variable in the *self_est_.c* file for respective kits.
+> **Note:** For the flash test to pass, it is recommended to copy and paste the checksum printed on the teraterm to the `flash_StoredCheckSum` variable in the *self_test.c* file for respective kits.
+
+> **Note:**  Either WDT or WWDT test should be performed for KIT_XMC72_EVK and KIT_XMC72_EVK_MUR_43439M2 devices, which can be enabled using the macro `WWDT_SELF_TEST_ENABLE` defined in the *self_test.h* file.
+
+> **Note:** To perform SRAM and Stack tests, update the macros `CY_SRAM_BASE`, `CY_SRAM_SIZE`, and `CY_STACK_SIZE` in the *SelfTest_SRAM_March_GCC.s* file in the *<mtb_shared>/mtb-stl/<tag>/stl/TOOLCHAIN_GCC_ARM/* directory according to the device being tested.
+
+> **Note:** To perform the stack memory test, ensure that the macros, `DEVICE_STACK_SIZE`, `DEVICE_SRAM_BASE`, and `DEVICE_SRAM_SIZE` in the *SelfTest_Stack.h* file in the  *<mtb_shared>/mtb-stl/<tag>/stl/stack/* directory are updated according to the device being tested.
+
 
 ## Debugging
 
@@ -216,15 +243,16 @@ Follow the instructions in your preferred IDE.
 </details>
 
 
+
 ## Design and implementation
 
 This example utilizes the internal core resources of the PSoC&trade; 6 MCU to conduct comprehensive testing. The *design.modus* file typically requires minimal configuration changes, except for specific timer resources needed for the interrupt and clock tests, which can be configured in the *design.modus* file using the device configurator.
 
-The example begins by initializing the BSP configuration and setting up the retarget-io for debug prints. A series of tests are then performed to evaluate crucial components. These include tests on Program Counter (PC), CPU Registers, Watchdog Timer (WDT), clock functionality, and interrupt handling. The test results are displayed on the console, aiding in monitoring and troubleshooting.
+The example begins by initializing the BSP configuration and setting up the retarget-io for debug prints. A series of tests are then performed to evaluate crucial components. These include tests on program counter (PC), CPU registers, watchdog timer (WDT), clock functionality, and interrupt handling. The test results are displayed on the console, aiding in monitoring and troubleshooting.
 
-The example further focuses on verifying the integrity of the flash memory by comparing stored checksums with calculated checksums based on flash data. Additionally, tests are conducted on IO functionality. Startup Config Registers are saved to flash and March tests are performed on SRAM and Stack using SelfTest APIs to ensure their proper functioning.
+The example further focuses on verifying the integrity of the flash memory by comparing stored checksums with calculated checksums based on flash data. Additionally, tests are conducted on the IO functionality. Startup config registers are saved to the flash and March tests are performed on SRAM and stack using SelfTest APIs to ensure their proper functioning.
 
-To ensure system stability, the example continually checks for stack overflow and verifies the Startup Config Register values by comparing them with stored values.
+To ensure system stability, the example continually checks for stack overflow and verifies the startup config register values by comparing them with stored values.
 
 By executing these tests, the example ensures the proper functioning of the core peripherals, providing valuable insights into the performance and reliability of the PSoC&trade; 6 MCU. The test results are displayed on the console, facilitating easy evaluation and troubleshooting.
 
@@ -235,80 +263,85 @@ By executing these tests, the example ensures the proper functioning of the core
 
  Resource  |  Alias/object     |    Purpose
  :-------- | :-------------    | :------------
- UART (HAL)| CYBSP_DEBUG_UART| UART HAL object used by Retarget-IO for the Debug UART port
+ UART (HAL) | CYBSP_DEBUG_UART | UART HAL object used by Retarget-IO for the Debug UART port
  Counter (PDL)   | CYBSP_CLOCK_TEST_TIMER   | Counter used for measuring clock with reference clock
  Counter (PDL)    | CYBSP_TIMER     | Counter used to measure number of interrupts within a period
  Data Wire (PDL)    | DMA_DW     | Data wire object used to test data wire functionality
 
 <br>
 
+
 ## Summary of the test details
 
-#### 1. Program Counter test:
+#### 1. Program counter test
 The Program Counter test involves jumping to known addresses of functions, updating global variables from that function, and then verifying the value of the global variable to check whether that function was executed or not. Custom linker scripts are used to place the functions to known addresses.
 
-#### 2. CPU Registers test:
+#### 2. CPU registers test
 The CPU Registers test verifies the integrity of CPU Registers by writing different patterns of values into them and then reading them back to ensure that every bit is correct.
 
-#### 3. WDT test:
-To perform the Watchdog Timer (WDT) test, enable the WDT and execute an infinite loop. If the WDT is functioning properly, it generates a reset. After the reset, the function checks the source of the reset. If the WDT is the source of the reset, the function returns with a success status. If the reset was caused by something other than the WDT, the function returns with an error status.
+#### 3. Watchdog timer test (WDT)
+To perform the Watchdog Timer test, enable the WDT and execute an infinite loop. If the WDT is functioning properly, it generates a reset. After the reset, the function checks the source of the reset. If the WDT is the source of the reset, the function returns with a success status. If the reset was caused by something other than the WDT, the function returns with an error status.
 
-#### 4. Clock test:
-The Clock test implements the independent time slot monitoring described in section H.2.18.10.4 of the IEC 60730 standard. Its purpose is to verify the reliability of the IMO system clock by ensuring that it runs neither too fast nor too slow within the tolerance, which is achieved by comparing counters with an independent clock source. The tolerance values are configurable.
+#### 4. Windowed watchdog timer
+Window-selectable WDTs allow the watchdog timeout period to be adjusted, providing more flexibility to meet different processor timing requirements. The windowed watchdog circuits protect systems from running too fast or too slow.The WDT is driven from the ILO, which has a large frequency error. The low tolerance of the clock source means that margin must be added to the minimum and maximum values for the WDT.
+Either WDT or WWDT test should be performed for KIT_XMC72_EVK and KIT_XMC72_EVK_MUR_43439M2 devices, which can be enabled using the `WWDT_SELF_TEST_ENABLE` macro defined in the *self_test.h* file.
 
-#### 5. Flash test (invariable memory):
-The flash test offers two types of tests which can be selected using `FLASH_TEST_MODE` macro from *SelfTest_Flash.h* file: 
+#### 5. Clock test
+The Clock test implements the independent time slot monitoring described in **Section H.2.18.10.4** of the **IEC 60730** standard. Its purpose is to verify the reliability of the IMO system clock by ensuring that it runs neither too fast nor too slow within the tolerance, which is achieved by comparing the counters with an independent clock source. The tolerance values are configurable.
+
+#### 6. Flash test (invariable memory)
+The flash test offers two types of tests which can be selected using the `FLASH_TEST_MODE` macro from *SelfTest_Flash.h* file: 
 - Fletcher's checksum
 - CRC32 checksum verification
 
-Both tests involve comparing the precalculated checksum with the actual checksum calculated from the data. Both, the precalculated checksum and the checksum data are stored in the flash. Custom linker scripts are used to store the precalculated checksum at the appropriate location in the flash.
+Both tests involve comparing the precalculated checksum with the actual checksum calculated from the data. Both the precalculated checksum and the checksum data are stored in the flash. Custom linker scripts are used to store the precalculated checksum at the appropriate location in the flash.
 
-To use the test, the user needs to update the precalculated checksum in the `flash_StoredCheckSum` variable in the *self_est_.c* file whenever there is a change in the application source binary. Hence, it is recommended to copy and paste the checksum printed on the teraterm to `flash_StoredCheckSum` variable in the *self_est_.c* file, which is a source file. During the test, the actual checksum is calculated based on the data stored inside the flash. Hence, it is recommended to erase the entire flash before programming it so that the actual checksum calculated during the test does not mismatch.
+To use the test, you need to update the precalculated checksum in the `flash_StoredCheckSum` variable in the *self_est_.c* file whenever there is a change in the application source binary. Hence, it is recommended to copy and paste the checksum printed on the teraterm to `flash_StoredCheckSum` variable in the *self_est_.c* file, which is a source file. During the test, the actual checksum is calculated based on the data stored inside the flash. Therefore, it is recommended to erase the entire flash before programming it so the actual checksum calculated during the test does not mismatch.
 
-#### 6. Interrupt test:
-The Interrupt test implements the independent time-slot monitoring defined in section H.2.18.10.4 of the IEC 60730 standard. It verifies that the number of interrupts that occurred is within a predefined range and also checks whether interrupts occur regularly. The test uses the interrupt source driven by the timer and checks the interrupt controller.
+#### 7. Interrupt test
+The Interrupt test implements the independent time-slot monitoring defined in **Section H.2.18.10.4** of the **IEC 60730** standard. It verifies that the number of interrupts occurred is within a predefined range and also checks whether interrupts occur regularly. The test uses the interrupt source driven by the timer and checks the interrupt controller.
 
-#### 7. IO test:
+#### 8. IO test
 The IO test provides a maskable test for all available ports and pins on the device. The goal of the test is to ensure that pins are not shorted to VCC or GND. 
 
 To detect a pin-to-ground short, the pin is configured in the resistive pull-up drive mode. Under normal conditions, the CPU reads a logical one because of the pull-up resistor. If the pin is connected to the ground through a small resistance, the input level is recognized as a logical '0'.
 
 To detect a pin-to-VCC short, the pin is configured in the resistive pull-down drive mode. The input level is usually '0', but will read as a logical '1' if the pin is shorted to VCC.
 
-#### 8. Config Registers test:
-This test checks the Configuration Registers for digital clocks, analog settings, GPIO, and HSIOM. Two types of tests can be selected using `STARTUP_CFG_REGS_MODE` macro from *SelfTest_ConfigRegisters.h* file:
+#### 9. Config registers test
+This test checks the configuration registers for digital clocks, analog settings, GPIO, and HSIOM. Two types of tests can be selected using the `STARTUP_CFG_REGS_MODE` macro from *SelfTest_ConfigRegisters.h* file:
 
-- CFG_REGS_TO_FLASH_MODE: Duplicates of the Startup Config Registers are stored in the flash memory after device startup. The Config Registers are periodically compared to the stored duplicates. If any Registers are corrupted, they can be restored from the flash.
+- **CFG_REGS_TO_FLASH_MODE**: Duplicates of the startup config registers are stored in the flash memory after device startup. The config registers are periodically compared to the stored duplicates. If any register is corrupted, it can be restored from the flash.
 
-- CFG_REGS_CRC_MODE: The calculated CRC is compared to the CRC previously stored in flash when the CRC status semaphore is set. If the status semaphore is not set, the CRC must be calculated and stored in the flash and the status semaphore must be set.
+- **CFG_REGS_CRC_MODE**: The calculated CRC is compared to the CRC previously stored in flash when the CRC status semaphore is set. If the status semaphore is not set, the CRC must be calculated and stored in the flash and the status semaphore must be set.
 
-#### 9. SRAM/Stack March test (variable memory):
+#### 10. SRAM/Stack March test (variable memory)
 The SRAM/Stack March test is used to verify the integrity of the SRAM and stack memory of the device. The test is performed by writing a known data sequence to the memory, and then reading it back and verifying that the data is not corrupted. This process is repeated with different patterns and memory locations to ensure that the memory is thoroughly tested.
 
 The test covers the data and the block starting symbol (bss) sections of the RAM, the heap section, and the stack area. A temporary buffer is used to hold data during the testing process.
 
-#### 10. Stack overflow test (variable memory):
+#### 11. Stack overflow test (variable memory)
 The purpose of the stack overflow test is to verify that the stack does not overlap with the program or data memory during program execution. One common cause of this issue is the use of recursive functions.
 
 In this test, a fixed pattern is used to fill a block of memory below the stack and periodic checks are performed to detect any corruption. It verifies the stored test pattern within a specific area of the stack, typically located at the end where the stack grows.
 
 By periodically checking for corruption, the test ensures the integrity of the stored pattern and confirms proper stack operation. This helps prevent potential stack overflow issues and ensures system stability.
 
-#### 11. FPU Registers test:
+#### 12. FPU Registers test
 The FPU registers test detects stuck-at faults in the FPU by using the checkerboard test. This test ensures that the bits in the registers are not stuck at value '0' or '1'. 
 The registers are tested by performing a write/read/compare test sequence using a checkerboard pattern (0x5555 5555, then 0xaaaa aaaaa). These binary sequences are valid floating point values. The test returns an error code if the returned values do not match.
 
-#### 12. Program Flow test:
+#### 13. Program Flow test
 A specific method is used to check program execution flow. For every critical execution code block, unique numbers are added to or subtracted from complementary counters before block execution and immediately after execution. These procedures allow you to see if the code block is correctly called from the main program flow and to check if the block is correctly executed. As long as there are always the same number of exit and entry points, the counter pair will always be complementary after each tested block. Any unexpected values should be treated as a program flow execution error. 
 
-#### 13. IPC (Inter-Process Communication / Inter-Processor Communication) test:
+#### 14. IPC (Inter-Process Communication / Inter-Processor Communication) test
 The IPC block is tested for multi core MCUs and is tested using the Cy_IPC_Pipe wrapper functions. An IPC callback function is registered first, so that callback gets called i.e. the test succeeds, when a message is sent to the pipe using IPC_Pipe_SendMessage. If the callback is not called after SendMessage, the test fails.
  
-#### 14. DMA / DW test:
+#### 15. DMA/DW test
 The DataWire blocks are tested using the following procedure:
-   1. A destination block of size 64 bytes is set to 0 with DW transfers using 16 x 32-bit transfers from a fixed address.
-   2. The destination block is verified to be all 0.
-   3. The same destination block is filled with 00 00 ff by using an 8-bit DMA from a fixed address with an increment of 3 and a length of 22 (64+(3-1))/3.
+   1. A destination block of size 64 bytes is set to '0' with DW transfers using 16x32 bit transfers from a fixed address.
+   2. The destination block is verified to be all '0'.
+   3. The same destination block is filled with 00 00 ff by using an 8-bit DMA from a fixed address with an increment of 3 and a length of (64+(3-1))/3 = 22.
    4. The destination block is verified to contain the correct pattern (shown below with lowest address first):
          ```
       ff0000ff0000ff0000ff0000ff0000ff0000ff0000ff0000…
@@ -339,14 +372,17 @@ Infineon provides a wealth of data at [www.infineon.com](https://www.infineon.co
 
 ## Document history
 
-Document title: *CE239718* - *Class-B safety test: Core peripherals*
+Document title: *CE239718* – *Class-B safety test: Core peripherals*
 
  Version | Description of change
  ------- | ---------------------
  1.0.0   | New code example
  2.0.0   | Updated to add new BSPs and IPs
+ 2.1.0   | Disabled D-cache for XMC7000 based BSPs
 
 <br>
+
+
 
 All referenced product or service names and trademarks are the property of their respective owners.
 
