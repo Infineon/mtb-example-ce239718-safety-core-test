@@ -94,9 +94,6 @@ int main(void)
 {
     cy_rslt_t result;
 
-    /* SelfTest API return status */
-    uint8_t ret = 0u;
-
     /* Initialize the device and board peripherals */
     result = cybsp_init();
 
@@ -185,8 +182,10 @@ int main(void)
     /* Stack Overflow and Underflow Test */
     Stack_Memory_Test();
 
+    #if !defined (CY_DEVICE_SECURE)
     /* Flash Test */
     Flash_Test();
+    #endif
 
     printf("------------------------------------------------------- \r\n\n");
     printf("END of the Core CPU Test.\r\n\n");

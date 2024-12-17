@@ -40,7 +40,7 @@
 * of such system or application assumes all risk of such use and in doing
 * so agrees to indemnify Cypress against all liability.
 *******************************************************************************/
-
+#include <stdlib.h>
 #include "cyhal.h"
 #include "cybsp.h"
 #include "cy_retarget_io.h"
@@ -60,22 +60,44 @@ uint16_t test_counter = 0u;
 
 
 /* Array to set shifts for March RAM test. */
-uint8_t shiftArrayRam[] = {5u, 0u};
+uint8_t sram_restore_buff[BUFFER_SIZE] = {0u};
 
-/* Array to set shifts for March Stack test. */
-uint8_t shiftArrayStack[] = {5u, 0u};
-
+#if defined (__ICCARM__)
 #if (FLASH_TEST_MODE == FLASH_TEST_FLETCHER64)
-static volatile const uint64_t flash_StoredCheckSum __attribute__((used,
-                                                                   section(".flash_checksum"))) =
-    0xC460CECE02BD9616;
+CY_SECTION(".flash_checksum") const uint64_t flash_StoredCheckSum = 0x1F762864545213C8;
 #endif
 #if (FLASH_TEST_MODE == FLASH_TEST_CRC32)
-static volatile const uint32_t flash_StoredCheckSum __attribute__((used,
-                                                                   section(".flash_checksum"))) =
-    0xeb0277e0UL;
+CY_SECTION(".flash_checksum") const uint64_t flash_StoredCheckSum = 0x2bb718d655ca26d;
+#endif
+#else
+#if (FLASH_TEST_MODE == FLASH_TEST_FLETCHER64)
+CY_SECTION(".flash_checksum")  uint64_t flash_StoredCheckSum = 0x1F762864545213C8;
+#endif
+#if (FLASH_TEST_MODE == FLASH_TEST_CRC32)
+CY_SECTION(".flash_checksum") uint64_t flash_StoredCheckSum = 0x2bb718d655ca26d;
+#endif
 #endif
 
+/*****************************************************************************
+* Function Name: IAR_Flash_Init
+******************************************************************************
+* Summary:
+* The function ensures that compiler optimizations are not done for IAR
+* compiler in the release mode.
+*
+* Parameters:
+*  void
+*
+* Return:
+*  void
+*****************************************************************************/
+#if defined (__ICCARM__)
+#pragma optimize=none
+void IAR_Flash_Init()
+{
+    SelfTest_Flash_init(CY_FLASH_BASE,FLASH_END_ADDR,flash_StoredCheckSum);
+}
+#endif
 /*****************************************************************************
 * Function Name: IO_Test
 ******************************************************************************
@@ -91,19 +113,16 @@ static volatile const uint32_t flash_StoredCheckSum __attribute__((used,
 *****************************************************************************/
 void IO_Test(void)
 {
-    char uart_debug_string[16];
     if(ERROR_STATUS == ret)
     {
         printf("\r\n");
     }
     ret = SelfTest_IO();
-    PRINT_TEST_RESULT(ip_index++,"GPIO Test",ret);
     if (OK_STATUS != ret)
     {
-        sprintf(uart_debug_string,"PORT %d[%d]",SelfTest_IO_GetPortError(),SelfTest_IO_GetPinError());
-        printf(uart_debug_string);
+        ret = ERROR_STATUS;
     }
-
+    PRINT_TEST_RESULT(ip_index++,"GPIO Test",ret);
 }
 
 /*****************************************************************************
@@ -170,10 +189,6 @@ void Clock_Test(void)
         if (test_counter > MAX_INDEX_VAL){
             test_counter = 0u;
         }
-    }
-    if (ERROR_STATUS == ret)
-    {
-        printf("\r\n");
     }
     Cy_SysLib_ClearResetReason();
     /* Either you need to clear WDT interrupt periodically or
@@ -292,6 +307,10 @@ void Interrupt_Test(void)
     ret = SelfTest_Interrupt(CYBSP_TIMER_HW, CYBSP_TIMER_NUM);
 
     PRINT_TEST_RESULT(ip_index++,"Interrupt Test", ret);
+    if(ERROR_STATUS == ret)
+    {
+        printf("\r\n");
+    }
 }
 
 /******************************************************************************
@@ -358,55 +377,23 @@ void Interrupt_Test_Init(void)
 *****************************************************************************/
 void Stack_March_Test(void)
 {
-    uint8_t shiftIndexStack = 0u;
-
-    /* Init March Stack SelfTest */
-    SelfTests_Init_March_Stack_Test(0u);
+    uint8_t* stack_restore_buff_ptr = (uint8_t*)malloc(4096);
     if(ERROR_STATUS == ret)
     {
         printf("\r\n");
     }
-    for(;;)
-    {
-        ret = SelfTests_Stack_March();
 
-        if(ERROR_STATUS == ret)
-        {
-            /* Process error */
-            PRINT_TEST_RESULT(ip_index,"Stack March Test", ret);
-            break;
-        }
+    __disable_irq();
 
-        /* If all Stack tested we can change shift */
-        else if(PASS_COMPLETE_STATUS == ret)
-        {
+    ret = SelfTest_SRAM_Stack((uint8_t *)DEVICE_STACK_BASE,(uint32_t)DEVICE_STACK_SIZE,stack_restore_buff_ptr);
+    free(stack_restore_buff_ptr);
+    __enable_irq();
 
-            /* Check if boundaries of "shiftArrayStack" has not been completed */
-            if(shiftIndexStack >= (sizeof(shiftArrayStack) - 1u))
-            {
-                /* if boundaries of "shiftArrayStack" has been completed -reset Index */
-                shiftIndexStack = 0;
-                break;
-            }
-            else
-            {
-                /* If no - increase Index */
-                shiftIndexStack++;
-                /* Initialize Stack March test with new shift : update Test_Stack_Addr in .s file*/
-                SelfTests_Init_March_Stack_Test(shiftArrayStack[shiftIndexStack]);
-            }
-        }
-        else
-        {
-            /* Do Nothing */
-        }
-    }
 
-    if (PASS_COMPLETE_STATUS == ret)
-    {
-        PRINT_TEST_RESULT(ip_index,"Stack March Test", ret);
-    }
+     /*Process error*/
+    PRINT_TEST_RESULT(ip_index,"Stack March Test", ret);
     ip_index++;
+
 }
 
 /*****************************************************************************
@@ -423,56 +410,21 @@ void Stack_March_Test(void)
 *****************************************************************************/
 void SRAM_March_Test(void)
 {
-    uint8_t shiftIndexRam = 0u;
     if(ERROR_STATUS == ret)
     {
         printf("\r\n");
     }
+    __disable_irq();
 
-    /* Init SRAM March Self test */
-    SelfTests_Init_March_SRAM_Test(0u);
+    ret = SelfTest_SRAM(TEST_MODE,(uint8_t *)DEVICE_SRAM_BASE,BLOCK_SIZE,(uint8_t *)sram_restore_buff,BUFFER_SIZE);
 
-    for (;;)
-    {
-        ret = SelfTests_SRAM_March();
+    __enable_irq();
 
-        if (ERROR_STATUS == ret)
-        {
-            /*Process error*/
-            PRINT_TEST_RESULT(ip_index,"SRAM March Test", ret);
-            break;
-        }
-
-        /* If all RAM tested we can change shift */
-        else if(PASS_COMPLETE_STATUS == ret)
-        {
-            /* Re-initialize test with new shift */
-            SelfTests_Init_March_SRAM_Test(shiftArrayRam[shiftIndexRam]);
-
-            /* Check if boundaries of "shiftArrayRam" has not been completed */
-            if(shiftIndexRam >= (sizeof(shiftArrayRam) - 1u))
-            {
-                /* if boundaries of "shiftArrayRam" has been completed -reset Index */
-                shiftIndexRam = 0;
-                break;
-            }
-            else
-            {
-                /* If no - increase Index */
-                shiftIndexRam++;
-
-            }
-            break;
-        }
-
-    }
-
-
-    if (PASS_COMPLETE_STATUS == ret)
-    {
-        PRINT_TEST_RESULT(ip_index,"SRAM March Test", ret);
-    }
+    /*Process error*/
+    char * test_name = (TEST_MODE)? "SRAM GALPAT Test" : "SRAM March Test";
+    PRINT_TEST_RESULT(ip_index,test_name, ret);
     ip_index++;
+
 }
 
 /*****************************************************************************
@@ -490,7 +442,7 @@ void SRAM_March_Test(void)
 void Stack_Memory_Test(void)
 {
     /* Init Stack SelfTest */
-    SelfTests_Init_Stack_Test(PATTERN_BLOCK_SIZE);
+    SelfTests_Init_Stack_Range((uint16_t*)DEVICE_STACK_BASE, DEVICE_STACK_SIZE, PATTERN_BLOCK_SIZE);
     if(ERROR_STATUS == ret)
     {
         printf("\r\n");
@@ -498,7 +450,7 @@ void Stack_Memory_Test(void)
     /*******************************/
     /* Run Stack Self Test...      */
     /*******************************/
-    uint8_t ret = SelfTests_Stack_Check();
+    uint8_t ret = SelfTests_Stack_Check_Range((uint16_t*)DEVICE_STACK_BASE, DEVICE_STACK_SIZE);
     if ((ERROR_STACK_OVERFLOW & ret))
     {
          /* Process error */
@@ -506,6 +458,7 @@ void Stack_Memory_Test(void)
     }
     else if ((ERROR_STACK_UNDERFLOW & ret))
     {
+        ret = ERROR_STATUS;
          /* Process error */
         PRINT_TEST_RESULT(ip_index,"Stack Underflow Test", ret);
     }
@@ -539,8 +492,11 @@ void Flash_Test(void)
     {
         printf("\r\n");
     }
+#if defined (__ICCARM__)
+    IAR_Flash_Init();
+#else
     SelfTest_Flash_init(CY_FLASH_BASE,FLASH_END_ADDR,flash_StoredCheckSum);
-
+#endif
     for(;;)
     {
         ret =  SelfTest_FlashCheckSum(FLASH_DOUBLE_WORDS_TO_TEST);
@@ -722,6 +678,10 @@ void Start_Up_Test(void)
 
     /* Process error */
     PRINT_TEST_RESULT(ip_index++,"Start-Up Register Test",ret);
+    if(ERROR_STATUS == ret)
+    {
+        printf("\r\n");
+    }
 
 }
 

@@ -819,13 +819,6 @@
                 <Personality template="sysclocks" version="3.0">
                     <Block location="srss[0].clock[0]" locked="true"/>
                 </Personality>
-                <Personality template="altsystick" version="3.0">
-                    <Block location="srss[0].clock[0].altsystickclk[0]" locked="true"/>
-                    <Parameters>
-                        <Param id="interval" value="0"/>
-                        <Param id="sourceClock" value="lfclk"/>
-                    </Parameters>
-                </Personality>
                 <Personality template="bakclk" version="3.0">
                     <Block location="srss[0].clock[0].bakclk[0]" locked="true"/>
                     <Parameters>

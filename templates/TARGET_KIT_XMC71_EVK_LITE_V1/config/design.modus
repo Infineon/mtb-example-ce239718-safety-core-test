@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Configuration app="BACKEND" formatVersion="14" lastSavedWith="Configurator Backend" lastSavedWithVersion="3.20.0" toolsPackage="ModusToolbox 3.2.0" xmlns="http://cypress.com/xsd/cydesignfile_v5">
+<Configuration app="BACKEND" formatVersion="14" lastSavedWith="Configurator Backend" lastSavedWithVersion="3.30.0" toolsPackage="ModusToolbox 3.3.0" xmlns="http://cypress.com/xsd/cydesignfile_v5">
     <Devices>
         <Device mpn="XMC7100D-F176K4160">
             <BlockConfig>
@@ -897,13 +897,6 @@
                 <Personality template="sysclocks" version="3.0">
                     <Block location="srss[0].clock[0]" locked="true"/>
                 </Personality>
-                <Personality template="altsystick" version="3.0">
-                    <Block location="srss[0].clock[0].altsystickclk[0]" locked="true"/>
-                    <Parameters>
-                        <Param id="interval" value="1000"/>
-                        <Param id="sourceClock" value="imo"/>
-                    </Parameters>
-                </Personality>
                 <Personality template="bakclk" version="3.0">
                     <Block location="srss[0].clock[0].bakclk[0]" locked="true"/>
                     <Parameters>
@@ -1142,7 +1135,6 @@
                         </Aliases>
                     </Block>
                     <Parameters>
-                        <Param id="Capture0Input" value="CY_TCPWM_INPUT_DISABLED"/>
                         <Param id="Capture1Input" value="CY_TCPWM_INPUT_DISABLED"/>
                         <Param id="ClockPrescaler" value="CY_TCPWM_COUNTER_PRESCALER_DIVBY_1"/>
                         <Param id="Compare0" value="1000"/>
@@ -1176,7 +1168,6 @@
                         </Aliases>
                     </Block>
                     <Parameters>
-                        <Param id="Capture0Input" value="CY_TCPWM_INPUT_DISABLED"/>
                         <Param id="Capture1Input" value="CY_TCPWM_INPUT_DISABLED"/>
                         <Param id="ClockPrescaler" value="CY_TCPWM_COUNTER_PRESCALER_DIVBY_1"/>
                         <Param id="Compare0" value="350000"/>

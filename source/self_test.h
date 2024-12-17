@@ -54,6 +54,8 @@
 extern uint16_t test_counter;
 /*Index for IPs*/
 extern uint8_t ip_index;
+/* SelfTest API return status */
+extern uint8_t ret;
 
 /*******************************************************************************
 * Macros
@@ -61,6 +63,11 @@ extern uint8_t ip_index;
 #define MAX_INDEX_VAL (0xFFF0u)
 
 #define CUSTOM_DELAY_VAL (500u)
+
+#define MARCH         SRAM_MARCH_TEST_MODE
+#define GALPAT        SRAM_GALPAT_TEST_MODE
+#define TEST_MODE     MARCH
+
 
 #if COMPONENT_CAT1C
 /* Enable WWDT self test for XMC devices*/
@@ -105,6 +112,62 @@ extern uint8_t ip_index;
 
 #define PATTERN_BLOCK_SIZE (8u)
 
+
+/***************************************
+* Initial Parameter Constants
+***************************************/
+
+/** Stack test pattern */
+#define STACK_TEST_PATTERN        0x55AAu
+
+/*The size of RAM/ STACK block to be tested. */
+#define BLOCK_SIZE                1024
+
+/*The size of buffer which is used to store/restore. */
+#define BUFFER_SIZE               4096
+
+#if CY_CPU_CORTEX_M4
+
+    #define DEVICE_SRAM_BASE           (0x08002000)
+
+    #if defined(CY_DEVICE_PSOC6A512K)
+        #define DEVICE_SRAM_SIZE       (0x3D800)
+    #endif
+
+    #if defined(CY_DEVICE_PSOC6A2M)
+        #define DEVICE_SRAM_SIZE       (0xFD800)
+    #endif
+
+    #if defined(CY_DEVICE_PSOC6A256K)
+        #define DEVICE_SRAM_SIZE       (0x1D800)
+    #endif
+
+    #if defined(CY_DEVICE_PSOC6ABLE2)
+        #define DEVICE_SRAM_SIZE       (0x45800)
+    #endif
+
+    #define DEVICE_STACK_SIZE          (0x1000)
+
+
+#elif CY_CPU_CORTEX_M7
+
+#define DEVICE_SRAM_BASE     (0x28004000)
+#define DEVICE_STACK_SIZE    (0x1000)
+
+    #if defined(CY_DEVICE_SERIES_XMC7100)
+      #define DEVICE_SRAM_SIZE       (0x000BC000)
+    #else
+      #define DEVICE_SRAM_SIZE       (0x000FBFF8)
+    #endif
+
+#endif
+
+/* Start of Stack address excluding the block size to store pattern */
+#define DEVICE_STACK_BASE           (DEVICE_SRAM_BASE + DEVICE_SRAM_SIZE)
+
+/* End of Stack address excluding the block size to store pattern */
+#define DEVICE_STACK_END            (uint32_t)(DEVICE_STACK_BASE - DEVICE_STACK_SIZE + STACK_TEST_BLOCK_SIZE)
+
 /*******************************************************************************
 * Function Prototypes
 *******************************************************************************/
@@ -126,6 +189,10 @@ void Start_Up_Test(void);
 void Stack_March_Test(void);
 void SRAM_March_Test(void);
 void Stack_Memory_Test(void);
+
+#if defined (__ICCARM__)
+void IAR_Flash_Init();
+#endif
 
 #endif /* SELF_TEST_H_ */
 
